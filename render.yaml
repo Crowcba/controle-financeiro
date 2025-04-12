@@ -13,5 +13,7 @@ services:
         sync: false
       - key: CLIENT_URL
         value: https://controle-financeiro-60w6.onrender.com
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        value: 11294810509-7n70iisq9d4vdbtq3mf0op2bar89cbs0.apps.googleusercontent.com
     healthCheckPath: /
     autoDeploy: true 
