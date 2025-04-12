@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -18,6 +18,7 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  Fab,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,6 +27,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Receipt as ReceiptIcon,
   Person as PersonIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 240;
@@ -67,11 +69,17 @@ function Dashboard() {
     <div>
       <Toolbar />
       <List>
-        <ListItem button>
+        <ListItem button component={Link} to="/dashboard">
           <ListItemIcon>
             <DashboardIcon />
           </ListItemIcon>
           <ListItemText primary="Visão Geral" />
+        </ListItem>
+        <ListItem button component={Link} to="/transactions/new">
+          <ListItemIcon>
+            <ReceiptIcon />
+          </ListItemIcon>
+          <ListItemText primary="Novo Lançamento" />
         </ListItem>
         <ListItem button>
           <ListItemIcon>
@@ -84,12 +92,6 @@ function Dashboard() {
             <TrendingUpIcon />
           </ListItemIcon>
           <ListItemText primary="Investimentos" />
-        </ListItem>
-        <ListItem button>
-          <ListItemIcon>
-            <ReceiptIcon />
-          </ListItemIcon>
-          <ListItemText primary="Transações" />
         </ListItem>
       </List>
     </div>
@@ -186,6 +188,7 @@ function Dashboard() {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          position: 'relative',
         }}
       >
         <Toolbar />
@@ -258,6 +261,21 @@ function Dashboard() {
             </Grid>
           </Grid>
         </Container>
+        
+        {/* Floating Action Button for quick access to new transaction */}
+        <Fab
+          color="primary"
+          aria-label="add"
+          component={Link}
+          to="/transactions/new"
+          sx={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+          }}
+        >
+          <AddIcon />
+        </Fab>
       </Box>
     </Box>
   );

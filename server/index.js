@@ -5,6 +5,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const investmentRoutes = require('./routes/investments');
+const transactionRoutes = require('./routes/transactions');
 const userRoutes = require('./routes/users');
 
 dotenv.config();
@@ -23,6 +24,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
+app.use('/api/transactions', transactionRoutes);
 app.use('/api/users', userRoutes);
 
 // Serve static files in production
