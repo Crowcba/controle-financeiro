@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
 
 const TransactionList = ({ transactions, setTransactions }) => {
   const formatCurrency = (value) => {
@@ -24,7 +23,7 @@ const TransactionList = ({ transactions, setTransactions }) => {
   };
 
   const formatDate = (date) => {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR });
+    return format(new Date(date), 'dd/MM/yyyy');
   };
 
   const getTypeColor = (type) => {

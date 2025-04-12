@@ -12,6 +12,7 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
+import { format } from 'date-fns';
 
 ChartJS.register(
   CategoryScale,
