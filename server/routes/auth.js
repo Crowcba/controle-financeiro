@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Mock user for testing
 const mockUser = {
@@ -28,6 +31,38 @@ router.post('/login', async (req, res) => {
     // Create and return JWT token
     const token = jwt.sign(
       { email: mockUser.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Google login route
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload;
+
+    // In a real application, you would:
+    // 1. Check if user exists in your database
+    // 2. If not, create a new user
+    // 3. Return a JWT token
+
+    // For now, we'll just return a mock token
+    const token = jwt.sign(
+      { email, name, picture },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
     );
