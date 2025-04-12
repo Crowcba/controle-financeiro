@@ -1,98 +1,145 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-// Mock user for testing
-const mockUser = {
-  email: 'test@example.com',
-  password: '$2a$10$YourHashedPasswordHere' // This should be a real hashed password in production
-};
+const axios = require('axios');
+const User = require('../models/User');
 
 // Login route
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists (mock validation)
-    if (email !== mockUser.email) {
-      return res.status(400).json({ message: 'User not found' });
+    // Verificar se o usuário existe
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(400).json({ message: 'Usuário não encontrado' });
     }
 
-    // Validate password (mock validation)
-    const isMatch = await bcrypt.compare(password, mockUser.password);
+    // Verificar a senha
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Senha inválida' });
     }
 
-    // Create and return JWT token
+    // Criar e retornar o token JWT
     const token = jwt.sign(
-      { email: mockUser.email },
+      { userId: user._id, email: user.email },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
     );
 
-    res.json({ token });
+    res.json({ 
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture
+      }
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Erro no login:', error);
+    res.status(500).json({ message: 'Erro no servidor' });
   }
 });
 
 // Google login route
 router.post('/google', async (req, res) => {
   try {
-    const { credential } = req.body;
+    const { access_token } = req.body;
 
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    // Obter informações do usuário do Google
+    const googleUserInfo = await axios.get(
+      'https://www.googleapis.com/oauth2/v3/userinfo',
+      {
+        headers: { Authorization: `Bearer ${access_token}` },
+      }
+    );
+
+    const { email, name, picture, sub: googleId } = googleUserInfo.data;
+
+    // Procurar ou criar usuário
+    let user = await User.findOne({ 
+      $or: [{ email: email.toLowerCase() }, { googleId }]
     });
 
-    const payload = ticket.getPayload();
-    const { email, name, picture } = payload;
+    if (!user) {
+      // Criar novo usuário
+      user = new User({
+        email: email.toLowerCase(),
+        name,
+        picture,
+        googleId
+      });
+      await user.save();
+    } else {
+      // Atualizar informações do usuário existente
+      user.name = name;
+      user.picture = picture;
+      user.googleId = googleId;
+      await user.save();
+    }
 
-    // In a real application, you would:
-    // 1. Check if user exists in your database
-    // 2. If not, create a new user
-    // 3. Return a JWT token
-
-    // For now, we'll just return a mock token
+    // Gerar token JWT
     const token = jwt.sign(
-      { email, name, picture },
+      { userId: user._id, email: user.email },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
     );
 
-    res.json({ token });
+    res.json({ 
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture
+      }
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Erro na autenticação do Google:', error);
+    res.status(500).json({ message: 'Erro na autenticação do Google' });
   }
 });
 
 // Register route
 router.post('/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
-    // Check if user already exists (mock validation)
-    if (email === mockUser.email) {
-      return res.status(400).json({ message: 'User already exists' });
+    // Verificar se o usuário já existe
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email já está em uso' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Criar novo usuário
+    const user = new User({
+      email: email.toLowerCase(),
+      password,
+      name
+    });
 
-    // In a real application, you would save the user to the database here
-    res.status(201).json({ message: 'User registered successfully' });
+    await user.save();
+
+    // Criar e retornar o token JWT
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({ 
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Erro no registro:', error);
+    res.status(500).json({ message: 'Erro no servidor' });
   }
 });
 

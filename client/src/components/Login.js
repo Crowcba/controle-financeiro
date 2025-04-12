@@ -11,7 +11,7 @@ import {
   Grid,
   Divider,
 } from '@mui/material';
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
 
 function Login() {
@@ -32,22 +32,24 @@ function Login() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const response = await api.post('/auth/google', {
-        credential: credentialResponse.credential
-      });
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
-    } catch (error) {
+  const login = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Envie o token de acesso para seu backend
+        const response = await api.post('/auth/google', {
+          access_token: tokenResponse.access_token
+        });
+        localStorage.setItem('token', response.data.token);
+        navigate('/dashboard');
+      } catch (error) {
+        setError('Erro ao fazer login com Google');
+        console.error('Erro no login com Google:', error);
+      }
+    },
+    onError: () => {
       setError('Erro ao fazer login com Google');
-      console.error('Erro no login com Google:', error);
     }
-  };
-
-  const handleGoogleError = () => {
-    setError('Erro ao fazer login com Google');
-  };
+  });
 
   return (
     <Container component="main" maxWidth="xs">
@@ -78,11 +80,28 @@ function Login() {
             </Alert>
           )}
           <Box sx={{ mt: 2, width: '100%' }}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              width="100%"
-            />
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => login()}
+              sx={{
+                backgroundColor: '#fff',
+                color: '#757575',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+                textTransform: 'none',
+                display: 'flex',
+                gap: 1,
+              }}
+            >
+              <img
+                src="https://www.google.com/favicon.ico"
+                alt="Google"
+                style={{ width: 20, height: 20 }}
+              />
+              Continuar com Google
+            </Button>
           </Box>
           <Divider sx={{ my: 3, width: '100%' }}>ou</Divider>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
