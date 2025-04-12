@@ -154,7 +154,7 @@ function Dashboard() {
           </ListItemIcon>
           <ListItemText primary="Contas" />
         </ListItem>
-        <ListItem button>
+        <ListItem button onClick={() => navigate('/investments')}>
           <ListItemIcon>
             <TrendingUpIcon />
           </ListItemIcon>

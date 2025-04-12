@@ -10,6 +10,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import TransactionForm from './components/TransactionForm';
+import Investments from './components/Investments';
 import './App.css';
 
 // Criar um tema personalizado
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/transactions/new" element={<TransactionForm />} />
+                <Route path="/investments" element={<Investments />} />
                 {/* Adicione outras rotas aqui conforme necessário */}
               </Routes>
             </div>
