@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Paper, Typography } from '@mui/material';
+import { Grid, Paper, Typography, Box } from '@mui/material';
 import { Line, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -120,22 +120,54 @@ const DashboardCharts = ({ transactions }) => {
     ]
   };
 
+  const chartContainerStyle = {
+    height: '300px',
+    position: 'relative',
+    margin: 'auto'
+  };
+
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: 2, height: '100%' }}>
           <Typography variant="h6" gutterBottom>
             Receitas e Despesas Mensais
           </Typography>
-          <Line data={lineChartData} options={{ maintainAspectRatio: false, height: 300 }} />
+          <Box sx={chartContainerStyle}>
+            <Line 
+              data={lineChartData} 
+              options={{ 
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                  }
+                }
+              }} 
+            />
+          </Box>
         </Paper>
       </Grid>
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: 2, height: '100%' }}>
           <Typography variant="h6" gutterBottom>
             Distribuição de Despesas
           </Typography>
-          <Pie data={pieChartData} options={{ maintainAspectRatio: false, height: 300 }} />
+          <Box sx={chartContainerStyle}>
+            <Pie 
+              data={pieChartData} 
+              options={{ 
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                  }
+                }
+              }} 
+            />
+          </Box>
         </Paper>
       </Grid>
       <Grid item xs={12}>
@@ -143,28 +175,35 @@ const DashboardCharts = ({ transactions }) => {
           <Typography variant="h6" gutterBottom>
             Despesas Diárias (Últimos 30 dias)
           </Typography>
-          <Line 
-            data={dailyExpenseData} 
-            options={{ 
-              maintainAspectRatio: false,
-              height: 300,
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: 'Valor (R$)'
+          <Box sx={chartContainerStyle}>
+            <Line 
+              data={dailyExpenseData} 
+              options={{ 
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
                   }
                 },
-                x: {
-                  title: {
-                    display: true,
-                    text: 'Data'
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Valor (R$)'
+                    }
+                  },
+                  x: {
+                    title: {
+                      display: true,
+                      text: 'Data'
+                    }
                   }
                 }
-              }
-            }} 
-          />
+              }} 
+            />
+          </Box>
         </Paper>
       </Grid>
     </Grid>
