@@ -9,26 +9,42 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Verificar se o usuário existe
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(400).json({ message: 'Usuário não encontrado' });
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
     }
 
-    // Verificar a senha
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user by email
+    const user = await User.findOne({ email: normalizedEmail });
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Email ou senha inválidos' });
+    }
+
+    // If user exists with Google only
+    if (!user.password) {
+      return res.status(400).json({ 
+        message: 'Esta conta foi criada com Google. Por favor, faça login com Google.' 
+      });
+    }
+
+    // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Senha inválida' });
+      return res.status(400).json({ message: 'Email ou senha inválidos' });
     }
 
-    // Criar e retornar o token JWT
+    // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '1h' }
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
     );
 
-    res.json({ 
+    // Return user info and token
+    res.json({
       token,
       user: {
         id: user._id,
@@ -37,9 +53,10 @@ router.post('/login', async (req, res) => {
         picture: user.picture
       }
     });
+
   } catch (error) {
     console.error('Erro no login:', error);
-    res.status(500).json({ message: 'Erro no servidor' });
+    res.status(500).json({ message: 'Erro interno do servidor' });
   }
 });
 

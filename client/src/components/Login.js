@@ -25,9 +25,11 @@ function Login() {
     try {
       const response = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/dashboard');
     } catch (error) {
-      setError('Email ou senha inválidos');
+      const message = error.response?.data?.message || 'Erro ao fazer login';
+      setError(message);
       console.error('Erro no login:', error);
     }
   };
@@ -35,14 +37,15 @@ function Login() {
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        // Envie o token de acesso para seu backend
         const response = await api.post('/auth/google', {
           access_token: tokenResponse.access_token
         });
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         navigate('/dashboard');
       } catch (error) {
-        setError('Erro ao fazer login com Google');
+        const message = error.response?.data?.message || 'Erro ao fazer login com Google';
+        setError(message);
         console.error('Erro no login com Google:', error);
       }
     },

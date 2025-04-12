@@ -20,8 +20,8 @@ const theme = createTheme({
   },
 });
 
-// Seu Google Client ID
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '1034484714930-ej9vlb1ecf8p58pg3jcabg1mo5ujt1ha.apps.googleusercontent.com';
+// Seu Google Client ID - Substitua pelo seu Client ID real do Google Cloud Console
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 function App() {
   return (
