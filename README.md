@@ -2,6 +2,12 @@
 
 Sistema de controle financeiro pessoal com autenticação de usuários e gerenciamento de investimentos.
 
+## Estrutura do Projeto
+
+O projeto está organizado em duas pastas principais:
+- `client/`: Frontend em React
+- `server/`: Backend em Node.js/Express
+
 ## Funcionalidades
 
 - Autenticação de usuários (registro e login)
@@ -20,26 +26,35 @@ Sistema de controle financeiro pessoal com autenticação de usuários e gerenci
 1. Clone o repositório:
 ```bash
 git clone [URL_DO_REPOSITÓRIO]
+cd finance-control
 ```
 
 2. Instale as dependências:
 ```bash
-cd backend
-npm install
+npm run install-all
 ```
 
 3. Configure as variáveis de ambiente:
-- Crie um arquivo `.env` na pasta `backend` com as seguintes variáveis:
+- Crie um arquivo `.env` na pasta `server` com as seguintes variáveis:
 ```
 MONGODB_URI=sua_url_do_mongodb
 JWT_SECRET=seu_secret_key
 PORT=5000
+CLIENT_URL=http://localhost:3000
 ```
 
-4. Inicie o servidor:
+4. Inicie o projeto em modo desenvolvimento:
 ```bash
-npm start
+npm run dev
 ```
+
+## Scripts Disponíveis
+
+- `npm run dev`: Inicia o servidor e o cliente em modo desenvolvimento
+- `npm run server`: Inicia apenas o servidor
+- `npm run client`: Inicia apenas o cliente
+- `npm run build`: Cria a build de produção do cliente
+- `npm start`: Inicia o servidor em modo produção
 
 ## API Endpoints
 
@@ -60,7 +75,14 @@ O sistema pode ser facilmente implantado no Render:
 1. Crie uma conta no Render
 2. Conecte seu repositório
 3. Configure as variáveis de ambiente
-4. Deploy automático
+4. Configure o Build Command:
+```bash
+npm run install-all && npm run build
+```
+5. Configure o Start Command:
+```bash
+npm start
+```
 
 ## Contribuição
 
