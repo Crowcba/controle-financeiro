@@ -9,44 +9,32 @@ import {
   Box,
   Alert,
   Grid,
-  Divider,
 } from '@mui/material';
-import { GoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
 
-function Login() {
+function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
-    } catch (error) {
-      setError('Email ou senha inválidos');
-      console.error('Erro no login:', error);
+    
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem');
+      return;
     }
-  };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const response = await api.post('/auth/google', {
-        credential: credentialResponse.credential
-      });
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
+      await api.post('/auth/register', { name, email, password });
+      navigate('/login');
     } catch (error) {
-      setError('Erro ao fazer login com Google');
-      console.error('Erro no login com Google:', error);
+      setError(error.response?.data?.message || 'Erro ao criar conta');
+      console.error('Erro no registro:', error);
     }
-  };
-
-  const handleGoogleError = () => {
-    setError('Erro ao fazer login com Google');
   };
 
   return (
@@ -70,22 +58,26 @@ function Login() {
           }}
         >
           <Typography component="h1" variant="h5">
-            Login
+            Cadastro
           </Typography>
           {error && (
             <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
               {error}
             </Alert>
           )}
-          <Box sx={{ mt: 2, width: '100%' }}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              width="100%"
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="name"
+              label="Nome"
+              name="name"
+              autoComplete="name"
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
-          </Box>
-          <Divider sx={{ my: 3, width: '100%' }}>ou</Divider>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <TextField
               margin="normal"
               required
@@ -94,7 +86,6 @@ function Login() {
               label="Email"
               name="email"
               autoComplete="email"
-              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -106,9 +97,21 @@ function Login() {
               label="Senha"
               type="password"
               id="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirmPassword"
+              label="Confirmar Senha"
+              type="password"
+              id="confirmPassword"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
             />
             <Button
               type="submit"
@@ -116,13 +119,13 @@ function Login() {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Entrar
+              Cadastrar
             </Button>
             <Grid container justifyContent="center">
               <Grid item>
-                <Link to="/register" style={{ textDecoration: 'none' }}>
+                <Link to="/login" style={{ textDecoration: 'none' }}>
                   <Button variant="text" color="primary">
-                    Não tem uma conta? Cadastre-se
+                    Já tem uma conta? Faça login
                   </Button>
                 </Link>
               </Grid>
@@ -134,4 +137,4 @@ function Login() {
   );
 }
 
-export default Login; 
+export default Register; 
