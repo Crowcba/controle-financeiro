@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -18,7 +18,7 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Fab,
+  CircularProgress,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -29,6 +29,12 @@ import {
   Person as PersonIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import DashboardCharts from './DashboardCharts';
+import api from '../services/api';
+import TransactionList from './TransactionList';
+import TransactionSummary from './TransactionSummary';
 
 const drawerWidth = 240;
 
@@ -37,6 +43,15 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [summary, setSummary] = useState({
+    totalBalance: 0,
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    totalInvestments: 0
+  });
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -45,7 +60,59 @@ function Dashboard() {
       return;
     }
     setUser(JSON.parse(userStr));
+    fetchTransactions();
   }, [navigate]);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await api.get('/transactions');
+      setTransactions(response.data);
+      calculateSummary(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar transações:', error);
+      setError('Erro ao carregar transações');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateSummary = (transactions) => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    
+    const summary = transactions.reduce((acc, transaction) => {
+      const transactionMonth = format(new Date(transaction.date), 'yyyy-MM');
+      
+      if (transaction.type === 'income') {
+        acc.totalBalance += transaction.amount;
+        if (transactionMonth === currentMonth) {
+          acc.monthlyIncome += transaction.amount;
+        }
+      } else if (transaction.type === 'expense') {
+        acc.totalBalance -= transaction.amount;
+        if (transactionMonth === currentMonth) {
+          acc.monthlyExpenses += transaction.amount;
+        }
+      } else if (transaction.type === 'investment') {
+        acc.totalInvestments += transaction.amount;
+      }
+      
+      return acc;
+    }, {
+      totalBalance: 0,
+      monthlyIncome: 0,
+      monthlyExpenses: 0,
+      totalInvestments: 0
+    });
+
+    setSummary(summary);
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -69,13 +136,13 @@ function Dashboard() {
     <div>
       <Toolbar />
       <List>
-        <ListItem button component={Link} to="/dashboard">
+        <ListItem button>
           <ListItemIcon>
             <DashboardIcon />
           </ListItemIcon>
           <ListItemText primary="Visão Geral" />
         </ListItem>
-        <ListItem button component={Link} to="/transactions/new">
+        <ListItem button onClick={() => navigate('/transactions/new')}>
           <ListItemIcon>
             <ReceiptIcon />
           </ListItemIcon>
@@ -99,6 +166,18 @@ function Dashboard() {
 
   if (!user) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
   }
 
   return (
@@ -162,7 +241,7 @@ function Dashboard() {
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
@@ -188,94 +267,18 @@ function Dashboard() {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          position: 'relative',
         }}
       >
         <Toolbar />
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Grid container spacing={3}>
-            {/* Saldo Total */}
-            <Grid item xs={12} md={4}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: 140,
-                }}
-              >
-                <Typography component="h2" variant="h6" color="primary" gutterBottom>
-                  Saldo Total
-                </Typography>
-                <Typography component="p" variant="h4">
-                  R$ 0,00
-                </Typography>
-              </Paper>
-            </Grid>
-            {/* Receitas do Mês */}
-            <Grid item xs={12} md={4}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: 140,
-                }}
-              >
-                <Typography component="h2" variant="h6" color="success.main" gutterBottom>
-                  Receitas do Mês
-                </Typography>
-                <Typography component="p" variant="h4">
-                  R$ 0,00
-                </Typography>
-              </Paper>
-            </Grid>
-            {/* Despesas do Mês */}
-            <Grid item xs={12} md={4}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: 140,
-                }}
-              >
-                <Typography component="h2" variant="h6" color="error.main" gutterBottom>
-                  Despesas do Mês
-                </Typography>
-                <Typography component="p" variant="h4">
-                  R$ 0,00
-                </Typography>
-              </Paper>
-            </Grid>
-            {/* Últimas Transações */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 2 }}>
-                <Typography component="h2" variant="h6" color="primary" gutterBottom>
-                  Últimas Transações
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Nenhuma transação registrada
-                </Typography>
-              </Paper>
-            </Grid>
-          </Grid>
+          <Typography variant="h4" gutterBottom>
+            Dashboard
+          </Typography>
+          
+          <TransactionSummary transactions={transactions} />
+          <DashboardCharts transactions={transactions} />
+          <TransactionList transactions={transactions} setTransactions={setTransactions} />
         </Container>
-        
-        {/* Floating Action Button for quick access to new transaction */}
-        <Fab
-          color="primary"
-          aria-label="add"
-          component={Link}
-          to="/transactions/new"
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16,
-          }}
-        >
-          <AddIcon />
-        </Fab>
       </Box>
     </Box>
   );
