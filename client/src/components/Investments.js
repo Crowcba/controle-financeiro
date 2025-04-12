@@ -18,7 +18,9 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Box
+  Box,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import axios from 'axios';
@@ -33,21 +35,25 @@ const Investments = () => {
     description: '',
     amount: '',
     type: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    autoUpdate: false,
+    updateDay: 1
   });
 
   const investmentTypes = [
-    'Ações',
-    'Fundos Imobiliários',
-    'Tesouro Direto',
-    'CDB',
-    'LCI/LCA',
-    'Poupança',
-    'Outros'
+    { value: 'Ações', autoUpdate: false },
+    { value: 'Fundos Imobiliários', autoUpdate: true },
+    { value: 'Tesouro Direto', autoUpdate: true },
+    { value: 'CDB', autoUpdate: true },
+    { value: 'LCI/LCA', autoUpdate: true },
+    { value: 'Poupança', autoUpdate: true },
+    { value: 'Outros', autoUpdate: false }
   ];
 
   useEffect(() => {
     fetchInvestments();
+    // Verificar atualizações mensais
+    checkMonthlyUpdates();
   }, []);
 
   const fetchInvestments = async () => {
@@ -64,6 +70,42 @@ const Investments = () => {
     }
   };
 
+  const checkMonthlyUpdates = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      // Verificar se já atualizamos este mês
+      const lastUpdate = localStorage.getItem('lastInvestmentUpdate');
+      if (lastUpdate && new Date(lastUpdate) >= firstDayOfMonth) {
+        return;
+      }
+
+      // Buscar investimentos que precisam de atualização
+      const response = await axios.get('http://localhost:5000/api/investments/check-updates', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.length > 0) {
+        // Atualizar investimentos
+        await axios.post('http://localhost:5000/api/investments/update', {
+          investments: response.data
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Atualizar data da última verificação
+        localStorage.setItem('lastInvestmentUpdate', new Date().toISOString());
+        
+        // Recarregar investimentos
+        fetchInvestments();
+      }
+    } catch (error) {
+      console.error('Erro ao verificar atualizações:', error);
+    }
+  };
+
   const handleOpen = () => {
     setOpen(true);
   };
@@ -74,15 +116,28 @@ const Investments = () => {
       description: '',
       amount: '',
       type: '',
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      autoUpdate: false,
+      updateDay: 1
     });
   };
 
   const handleChange = (e) => {
+    const { name, value, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: name === 'autoUpdate' ? checked : value
     });
+
+    // Se o tipo de investimento mudou, atualizar autoUpdate baseado no tipo
+    if (name === 'type') {
+      const selectedType = investmentTypes.find(type => type.value === value);
+      setFormData(prev => ({
+        ...prev,
+        type: value,
+        autoUpdate: selectedType?.autoUpdate || false
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -155,6 +210,7 @@ const Investments = () => {
                 <TableCell>Descrição</TableCell>
                 <TableCell>Tipo</TableCell>
                 <TableCell align="right">Valor</TableCell>
+                <TableCell>Atualização</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
             </TableHead>
@@ -165,6 +221,9 @@ const Investments = () => {
                   <TableCell>{investment.description}</TableCell>
                   <TableCell>{investment.type}</TableCell>
                   <TableCell align="right">{formatCurrency(investment.amount)}</TableCell>
+                  <TableCell>
+                    {investment.autoUpdate ? 'Automática' : 'Manual'}
+                  </TableCell>
                   <TableCell align="right">
                     <IconButton size="small" color="primary">
                       <EditIcon />
@@ -224,8 +283,8 @@ const Investments = () => {
                   required
                 >
                   {investmentTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
+                    <MenuItem key={type.value} value={type.value}>
+                      {type.value}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -244,6 +303,33 @@ const Investments = () => {
                   }}
                 />
               </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.autoUpdate}
+                      onChange={handleChange}
+                      name="autoUpdate"
+                      disabled={!investmentTypes.find(t => t.value === formData.type)?.autoUpdate}
+                    />
+                  }
+                  label="Atualização Automática Mensal"
+                />
+              </Grid>
+              {formData.autoUpdate && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Dia da Atualização"
+                    name="updateDay"
+                    type="number"
+                    value={formData.updateDay}
+                    onChange={handleChange}
+                    required
+                    inputProps={{ min: 1, max: 31 }}
+                  />
+                </Grid>
+              )}
             </Grid>
           </DialogContent>
           <DialogActions>
